@@ -7,6 +7,7 @@
     <title>Document</title>
 </head>
 <body>
+    <h1>This is the body</h1>
     <?php
         echo $_SERVER['HTTP_HOST'];
     ?>
