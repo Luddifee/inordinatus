@@ -8,7 +8,7 @@
 </head>
 <body>
     <?php
-        echo gethostname();
+        echo $_SERVER['HTTP_HOST'];
     ?>
 </body>
 </html>
