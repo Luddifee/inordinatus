@@ -8,10 +8,7 @@
 </head>
 <body>
     <h1>This is the body</h1>
-    <?php include ("db.php"); ?>
-    <p><?php
-            $servername = $_SERVER['HTTP_HOST'];
-            echo $servername;
-        ?></p>
+    <p><?php echo $_SERVER['HTTP_HOST']; ?></p>
+    <?php include "db.php"; ?>
 </body>
 </html>
