@@ -1,0 +1,26 @@
+{
+  "name": "inordinatus",
+  "version": "1.0.0",
+  "description": "A tool for managing tools and other stuff.",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "http": "0.0.1-security",
+    "nodemon": "^2.0.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "dev": "nodemon ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Luddifee/inordinatus.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Luddifee/inordinatus/issues"
+  },
+  "homepage": "https://github.com/Luddifee/inordinatus#readme"
+}
