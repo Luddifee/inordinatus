@@ -148,28 +148,6 @@ function request_valid(request, params) {
     return true;
 }
 
-
-
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-console.log('token:', add_token('Benutzername1'))
-
 const app = express();
 
 app.use(express.json());
