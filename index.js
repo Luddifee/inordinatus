@@ -1,3 +1,11 @@
+/* ERROR CODES:
+ * 1:   INVALID REQUEST
+ * 2:   UNEXPECTED ERROR
+ * 10:  UNAUTHORIZED
+ * 11:  MISSING PERMISSIONS
+ * 20:  ELEMENT ALREADY EXISTS
+ */
+
 const PORT  = 8080;
 const TOKEN_LENGTH = 64;
 const TOKEN_TTL_MINUTES = 60;
@@ -49,9 +57,10 @@ function hashSync(string, rounds=BCRYPT_SALT_ROUNDS) {
 // DATA STRUCTURES
 
 class User {
-    constructor(username, password) {
+    constructor(username, password, permissions) {
         this.username = username;
-        this.password = hashSync(string);
+        this.password = hashSync(password);
+        this.permissions = permissions === undefined || isNaN(permissions) ? 1 : Number(permissions);
     }
 }
 
@@ -85,9 +94,9 @@ function new_id(objects, keyword) {
     const ids = [];
     for (var i = 0; i < objects.length; i++)
         ids.push(objects[i].id);
-    var id = id_lookup(keyword);
-    while (ids.indexOf(id) !== -1)
-        id += 1
+    var id = 1;
+    if(keyword !== undefined) id = id_lookup(keyword);
+    while (ids.indexOf(id) !== -1) id += 1
     return id;
 }
 
@@ -103,8 +112,9 @@ function get_user(username) {
 
 function add_user(user) {
     const users = get_users();
-    if (users.find(user => user.username === username) !== undefined)
+    if (users.find(u => u.username === user.username) !== undefined)
         return 1;
+    user["id"] = new_id(users);
     users.push(user);
     fs.writeFileSync(USERS_FILE, JSON.stringify(users));
 }
@@ -140,6 +150,15 @@ function token_valid(token) {
     return false;
 }
 
+function token_user(token) {
+    const tokens = get_tokens();
+    token_cleanup(tokens);
+    fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens));
+    for (var i = 0; i < tokens.length; i++)
+        if (bcrypt.compareSync(token, tokens[i]["token"]))
+            return get_user(tokens[i]["username"]);
+}
+
 function gen_token(username) {
     if (get_user(username) === undefined) return 1;
     const tokenString = random_string(TOKEN_LENGTH);
@@ -157,6 +176,17 @@ function gen_token(username) {
     return tokenString;
 }
 
+function disable_token(token) {
+    const tokens = get_tokens();
+    for (var i = 0; i < tokens.length; i++) {
+        if (bcrypt.compareSync(token, tokens[i]["token"])) {
+            tokens.splice(i, 1);
+            break;
+        }
+    }
+    fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens));
+}
+
 // TOOLS
 function get_tools() {
     if(!fs.existsSync(TOOLS_FILE)) return [];
@@ -165,23 +195,23 @@ function get_tools() {
 
 function add_tool(tool) {
     const tools = get_tools();
-    tool["id"] = new_id(tools, tool.manufacturer.toLowerCase());
+    tool["id"] = new_id(tools, tool["manufacturer"].toLowerCase());
     tools.push(tool);
     fs.writeFileSync(TOOLS_FILE, JSON.stringify(tools));
 }
 
 // EXPRESS
-function request_valid(request, params) {
+function json_valid(json, params) {
     var valid = true;
     for (var i = 0; i < params.length; i++) {
-        valid = request.body[params[i]] !== undefined;
+        valid = json[params[i]] !== undefined;
         if (!valid) return false;
     }
     return true;
 }
 
 
-console.log(gen_token('Benutzername1'));
+add_user(new User('username', 'password', 2));
 
 
 // EXPRESS
@@ -195,7 +225,7 @@ app.post('/api/login', async (req, res) => {
     log(req.ip+' POST /api/login');
     var result_code = 0;
     var token = undefined;
-    if(!request_valid(req, ["username", "password"]))
+    if(!json_valid(req.body, ["username", "password"]))
         result_code = 1;
     else if(!login_valid(req.body["username"], req.body["password"]))
         result_code = 10;
@@ -208,31 +238,77 @@ app.post('/api/logout', async (req, res) => {
     var result_code = 0;
     if (req.body["token"] === undefined)
         result_code = 1;
-    
+    else if (!token_valid(req.body["token"]))
+        result_code = 10;
+    else disable_token(req.body["token"]);
     res.send({resultCode:result_code});
 });
 
 // TOOLS
 app.get('/api/tools', async (req, res) => {
-    log(req.ip+' PUT /api/tools');
-    res.send({value:"not implemented yet"});
+    log(req.ip+' GET /api/tools');
+    var tools = undefined;
+    var result_code = 0;
+    if(req.body["token"] === undefined)
+        result_code = 1;
+    else if(!token_valid(req.body["token"]))
+        result_code = 10;
+    else tools = get_tools();
+    res.send({content:tools, resultCode:result_code});
 });
 
 app.put('/api/tools', async (req, res) => {
     log(req.ip+' PUT /api/tools');
-    res.send({value:"not implemented yet"});
+    var result_code = 0;
+    if(!json_valid(req.body, ["token", "data"]) || !json_valid(req.body["data"], ["manufacturer", "label", "quality"]))
+        result_code = 1;
+    else if(!token_valid(req.body["token"]))
+        result_code = 10;
+    else {
+        const data = req.body["data"];
+        add_tool(new Tool(data["manufacturer"], data["label"], data["quality"]));
+    }
+    res.send({resultCode:result_code});
 });
 
 
 // USERS
 app.get('/api/users', async (req, res) => {
-    log(req.i+' GET /api/users');
-    res.send({value:"not implemented yet"});
+    log(req.ip+' GET /api/users');
+    var users = undefined;
+    var result_code = 0;
+    if(req.body["token"] === undefined)
+        result_code = 1;
+    else if(!token_valid(req.body["token"]))
+        result_code = 10;
+    else {
+        const user = token_user(req.body["token"]);
+        if(user !== undefined) {
+            if (user.permissions > 1) users = get_users();
+            else result_code = 11;
+        } else result_code = 2;
+    }
+    res.send({content:users, resultCode:result_code});
 });
 
 app.put('/api/users', async (req, res) => {
     log(req.ip+' PUT /api/users');
-    res.send({value:"not implemented yet"});
+    var result_code = 0;
+    if(!json_valid(req.body, ["token", "data"]) || !json_valid(req.body["data"], ["username", "password"]))
+        result_code = 1;
+    else if(!token_valid(req.body["token"]))
+        result_code = 10;
+    else {
+        const user = token_user(req.body["token"]);
+        const data = req.body["data"];
+        if(user !== undefined) {
+            if (user.permissions > 1) {
+                if (add_user(new User(data["username"], data["password"], data["permissions"])) === 1)
+                    result_code = 20;
+            } else result_code = 11;
+        } else result_code = 2;
+    }
+    res.send({resultCode:result_code});
 });
 
 // TOKEN
