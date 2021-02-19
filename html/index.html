@@ -7,6 +7,15 @@
     <title>Document</title>
 </head>
 <body>
+    <script src="lib.js"></script>
     <p>Test</p>
+    <script>
+        http_request(
+            'POST',
+            {username:"username", password:"password"},
+            '/api/login',
+            (response) => console.log(response)
+        );
+    </script>
 </body>
 </html>

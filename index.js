@@ -6,7 +6,7 @@
  * 20:  ELEMENT ALREADY EXISTS
  */
 
-const PORT  = 8080;
+const PORT  = 80;
 const TOKEN_LENGTH = 64;
 const TOKEN_TTL_MINUTES = 60;
 const BCRYPT_SALT_ROUNDS = 10;
@@ -223,6 +223,7 @@ app.use(express.static('html/'));
 // LOGIN
 app.post('/api/login', async (req, res) => {
     log(req.ip+' POST /api/login');
+    console.log(req.body);
     var result_code = 0;
     var token = undefined;
     if(!json_valid(req.body, ["username", "password"]))
