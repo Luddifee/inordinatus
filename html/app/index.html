@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inordinatus</title>
+    <title>Document</title>
 </head>
 <body>
     <script src="/lib.js"></script>
@@ -13,11 +13,11 @@
             const token = get_cookie("token");
             if(token.length > 0)
                 http_request("POST", JSON.stringify({token:token}), "/api/token", (res) => {
-                    if (JSON.parse(res)["resultCode"] === 0) window.location.href = "/app/";
-                    else window.location.href = "/login/";
+                    if (JSON.parse(res)["resultCode"] !== 0) window.location.href = "/login/";
                 });
             else window.location.href = "/login/";
-        } catch (e) { window.location.href = "/login/"; }
+        } catch (e) { console.error(e); /*window.location.href = "/login/";*/ }
     </script>
+    <p>App</p>
 </body>
 </html>

@@ -151,6 +151,8 @@ function token_valid(token) {
 }
 
 function token_user(token) {
+    if(!(token instanceof String || typeof token === 'string') || token.trim().length == 0)
+        return undefined;
     const tokens = get_tokens();
     token_cleanup(tokens);
     fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens));
@@ -223,7 +225,6 @@ app.use(express.static('html/'));
 // LOGIN
 app.post('/api/login', async (req, res) => {
     log(req.ip+' POST /api/login');
-    console.log(req.body);
     var result_code = 0;
     var token = undefined;
     if(!json_valid(req.body, ["username", "password"]))
@@ -295,9 +296,10 @@ app.get('/api/users', async (req, res) => {
 app.put('/api/users', async (req, res) => {
     log(req.ip+' PUT /api/users');
     var result_code = 0;
+    const user = token_user(req.body["token"]);
     if(!json_valid(req.body, ["token", "data"]) || !json_valid(req.body["data"], ["username", "password"]))
         result_code = 1;
-    else if(!token_valid(req.body["token"]))
+    else if(user === undefined)
         result_code = 10;
     else {
         const user = token_user(req.body["token"]);
@@ -316,11 +318,14 @@ app.put('/api/users', async (req, res) => {
 app.post('/api/token', async (req, res) => {
     log(req.ip+' POST /api/token');
     var result_code = 0;
+    var username = undefined;
+    const user = token_user(req.body["token"]);
     if(req.body["token"] === undefined)
         result_code = 1;
-    else if(!token_valid(req.body["token"]))
+    else if(user === undefined)
         result_code = 10;
-    res.send({resultCode: result_code});
+    else username = user.username;
+    res.send({username:username, resultCode:result_code});
 });
 
 app.get('*', (req, res) => res.redirect('/'))
